@@ -72,6 +72,7 @@ public partial class TerminalViewModel : ObservableObject, IDisposable
     private string _newItemName = string.Empty;
 
     public event Action<string>? TerminalOutputReceived;
+    public event Action? TerminalCleared;
 
     public TerminalViewModel(SshService ssh, SettingsService settings)
     {
@@ -303,18 +304,13 @@ public partial class TerminalViewModel : ObservableObject, IDisposable
 
     private void AppendTerminalData(string raw)
     {
-        // Strip all ANSI / VT escape sequences
-        var text = AnsiRegex.Replace(raw, string.Empty);
-
-        // Normalize \r\n → \n so we only see lone \r as "go to line start"
-        text = text.Replace("\r\n", "\n");
+        var text = AnsiRegex.Replace(raw, string.Empty).Replace("\r\n", "\n");
 
         foreach (char c in text)
         {
             switch (c)
             {
                 case '\r':
-                    // Carriage return: erase current line content back to last \n
                     int lastNl = -1;
                     for (int j = _terminalBuffer.Length - 1; j >= 0; j--)
                     {
@@ -324,23 +320,19 @@ public partial class TerminalViewModel : ObservableObject, IDisposable
                     if (_terminalBuffer.Length > lineStart)
                         _terminalBuffer.Remove(lineStart, _terminalBuffer.Length - lineStart);
                     break;
-
                 case '\b':
                     if (_terminalBuffer.Length > 0 && _terminalBuffer[_terminalBuffer.Length - 1] != '\n')
                         _terminalBuffer.Remove(_terminalBuffer.Length - 1, 1);
                     break;
-
                 case '\0':
                 case '\a':
-                    break; // discard null / bell
-
+                    break;
                 default:
                     _terminalBuffer.Append(c);
                     break;
             }
         }
 
-        // Drop oldest half when buffer grows too large
         if (_terminalBuffer.Length > MaxTerminalChars)
         {
             int target = _terminalBuffer.Length - MaxTerminalChars / 2;
@@ -370,13 +362,11 @@ public partial class TerminalViewModel : ObservableObject, IDisposable
                 {
                     var data = _shell.Read();
                     if (!string.IsNullOrEmpty(data))
-                    {
                         Application.Current?.Dispatcher.Invoke(() =>
                         {
                             AppendTerminalData(data);
                             TerminalOutputReceived?.Invoke(data);
                         });
-                    }
                     Thread.Sleep(50);
                 }
                 catch { break; }

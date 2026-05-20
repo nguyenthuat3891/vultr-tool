@@ -75,9 +75,9 @@
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" BorderBrush="#555" BorderThickness="1" Background="#1E1E1E">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  x:Name="TerminalScroll">
+                    <ScrollViewer x:Name="TerminalScroll"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto">
                         <TextBlock Text="{Binding TerminalOutput}"
                                    FontFamily="Consolas" FontSize="13"
                                    Foreground="#D4D4D4" Padding="6"
