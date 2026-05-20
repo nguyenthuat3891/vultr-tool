@@ -1,0 +1,27 @@
+<Application x:Class="ToolVPS.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ToolVPS.Converters"
+             xmlns:vm="clr-namespace:ToolVPS.ViewModels"
+             xmlns:views="clr-namespace:ToolVPS.Views">
+    <Application.Resources>
+        <ResourceDictionary>
+            <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:InverseBoolConverter      x:Key="InverseBool"/>
+            <conv:DirIconConverter          x:Key="DirIcon"/>
+
+            <DataTemplate DataType="{x:Type vm:InstanceListViewModel}">
+                <views:InstanceListView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SshKeyViewModel}">
+                <views:SshKeyView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TerminalViewModel}">
+                <views:RemoteTerminalView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DockerViewModel}">
+                <views:DockerView/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
