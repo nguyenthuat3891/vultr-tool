@@ -10,6 +10,10 @@ namespace ToolVPS.ViewModels;
 public partial class InstanceListViewModel : ObservableObject
 {
     private readonly VultrService _vultr;
+    private readonly SettingsService _settings;
+
+    [ObservableProperty]
+    private string _apiKey = string.Empty;
 
     [ObservableProperty]
     private ObservableCollection<VultrInstance> _instances = new();
@@ -47,9 +51,43 @@ public partial class InstanceListViewModel : ObservableObject
     public event Action<VultrInstance>? ConnectRequested;
     public event Action<string, int, string, string, string>? QuickConnectRequested;
 
-    public InstanceListViewModel(VultrService vultr)
+    public InstanceListViewModel(VultrService vultr, SettingsService settings)
     {
         _vultr = vultr;
+        _settings = settings;
+
+        var savedKey = _settings.Settings.VultrApiKey;
+        if (!string.IsNullOrWhiteSpace(savedKey))
+        {
+            ApiKey = savedKey;
+            _vultr.SetApiKey(savedKey);
+        }
+
+        var q = _settings.Settings.LastQuickConnect;
+        if (q != null)
+        {
+            QuickHost     = q.Host;
+            QuickPort     = q.Port;
+            QuickUsername = q.Username;
+            QuickKeyPath  = q.KeyPath;
+        }
+    }
+
+    [RelayCommand]
+    private void ApplyApiKey()
+    {
+        var key = ApiKey.Trim();
+        _settings.Settings.VultrApiKey = key;
+        _settings.Save();
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            _vultr.SetApiKey(key);
+            StatusMessage = "API key saved. Click Refresh to load instances.";
+        }
+        else
+        {
+            StatusMessage = "API key cleared.";
+        }
     }
 
     [RelayCommand]
@@ -121,6 +159,15 @@ public partial class InstanceListViewModel : ObservableObject
             StatusMessage = "Enter a valid SSH port number.";
             return;
         }
+
+        _settings.Settings.LastQuickConnect = new LastQuickConnect
+        {
+            Host     = host,
+            Port     = QuickPort,
+            Username = QuickUsername,
+            KeyPath  = QuickKeyPath
+        };
+        _settings.Save();
 
         QuickConnectRequested?.Invoke(host, port, QuickUsername, QuickPassword, QuickKeyPath);
     }
