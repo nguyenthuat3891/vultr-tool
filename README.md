@@ -1,70 +1,95 @@
 # ToolVPS
 
-A lightweight Windows desktop tool for managing VPS servers over SSH — no Vultr API key required to use the core features.
+A Windows desktop tool for managing VPS servers over SSH. Works fully without a Vultr API key — the API key is optional and only needed to list Vultr instances.
 
-Built with WPF / .NET 8, MVVM pattern, SSH.NET.
+Built with WPF / .NET 8, MVVM (CommunityToolkit), SSH.NET.
 
 ---
 
-## Features
+## Tabs
 
-### SSH Terminal
-- Connect via **password** or **private key** (Ed25519 / RSA)
-- Embedded terminal with live shell streaming
-- ANSI output cleaned for readable display (`dumb` terminal mode — compatible with `codex`, `claude` CLI, etc.)
-- Terminal `cd`s automatically when you open a folder in the file browser
-- Connection info (host, port, user, key path) saved and restored on next launch
+### Instances
+- **Vultr API key** field (masked) — paste your key, click **Save & Apply** to load instances. Key is saved and restored on next launch.
+- Lists all Vultr instances: Label, IP, Status, Region, Plan, OS, vCPU, RAM, Created date
+- **Refresh** / **Reboot** selected instance
+- **Open Local SSH Window** — launches Windows Terminal or CMD with `ssh user@ip`
+- **Quick SSH Connect** panel — enter Host, Port, User, Password / private key path and click **SSH Connect** to open the embedded terminal directly. All fields (except password) are saved and restored on next launch.
 
-### Remote File Manager
-- Browse the remote filesystem via SFTP (side panel)
-- **Create folder** and **Create file** directly on the server
-- **Open** files into the built-in editor
-- **Edit and save** files back to the server
-- Navigate up/down directories; file list scrolls when many entries
+### Terminal (SSH)
+- Connect via **Password** or **Private Key** (Ed25519 / RSA)
+- Host, port, username, and key path are saved and restored on next launch
+- Embedded terminal with live shell output — ANSI escape codes stripped for clean display (`dumb` terminal mode, compatible with tools like `codex`, `claude` CLI)
+- `PAGER=cat` set automatically so `git log`, `man`, etc. do not block
+- Type commands in the input bar and press **Enter** or **Send**
+- **Disconnect** button ends the session
 
-### SSH Key Management
-- **Generate** RSA (4096-bit) or Ed25519 key pairs, saved to any local directory
-- **Load** an existing private key and derive / display its public key
-- **Install** a public key to a remote server (equivalent to `ssh-copy-id`)
+#### Remote File Manager (right panel)
+- Browse the remote filesystem via SFTP
+- **Up** button navigates to parent directory
+- **Double-click** a folder to enter it — terminal also `cd`s to that path automatically
+- **Create folder / Create file** — type a name in the input box and click `+ Folder` or `+ File`
+- **Open** a file to load it into the built-in editor
+- **Save File** writes edits back to the server
+- File list is fixed height (scrollable); editor expands with the window
 
-### Docker Management
-- List all containers with status, image, and ports
-- **Start / Stop / Restart** containers
-- Stream **container logs**
-- List Docker Compose services and their port bindings
-- **Port tunneling** shortcuts: one-click local tunnels for Postgres (5432), MySQL (3306), Redis (6379), or any custom port
+### SSH Keys
+- **Generate** RSA (4096-bit) or Ed25519 key pairs — choose name, save directory, and key type
+- **Load** an existing private key — RSA public key is derived automatically; Ed25519 reads the `.pub` file
+- **Install Public Key** to a remote server (equivalent to `ssh-copy-id`) — connects once with password to append the key to `~/.ssh/authorized_keys` with correct permissions
 
-### Vultr Integration *(optional)*
-- If a Vultr API key is configured, lists all instances with IP, status, region, plan, OS, vCPU, RAM
-- **Reboot** instances from the UI
-- Click an instance to pre-fill SSH connection details
+### Docker
+- **Check Docker** — verifies Docker is installed and returns version
+- **Refresh All** — lists all containers and Docker Compose services
+- Start / **Stop / Restart** selected containers
+- **View Logs** — streams recent container output
+- Lists Compose services with port bindings
+- **Port tunneling** — one-click local SSH tunnels:
+  - Postgres → `127.0.0.1:5432`
+  - MySQL → `127.0.0.1:3306`
+  - Redis → `127.0.0.1:6379`
+  - Custom port — enter local and remote port manually
+- Active tunnels shown with **Remove** button
+
+---
+
+## Settings Persistence
+
+All settings are stored in `%APPDATA%\ToolVPS\settings.json`.
+
+| Field | Saved when |
+|---|---|
+| Vultr API key | "Save & Apply" clicked |
+| Quick SSH — Host, Port, User, Key path | "SSH Connect" clicked |
+| Terminal — Host, Port, User, Auth mode, Key path | Successful SSH connect |
+
+Passwords are never saved.
 
 ---
 
 ## Requirements
 
 - Windows 10 / 11
-- .NET 8 Desktop Runtime
-- SSH access to your VPS (password or private key)
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- SSH access to your VPS
 
 ---
 
 ## Getting Started
 
-1. Clone / download the repo
-2. `dotnet run` or open `ToolVPS.sln` in Visual Studio and press F5
-3. Go to the **Terminal** tab, enter your server's IP, port, username, and credential
-4. Click **Connect**
+1. Clone or download the repo
+2. Open `ToolVPS.sln` in Visual Studio and press **F5**, or run `dotnet run` from the `ToolVPS/` folder
+3. Go to the **Instances** tab → **Quick SSH Connect** — enter your server IP and credentials → **SSH Connect**
 
-No API key needed — all SSH features work standalone.
+No Vultr API key required for any SSH feature.
 
 ---
 
 ## Tech Stack
 
-| Library | Purpose |
-|---|---|
-| [SSH.NET](https://github.com/sshnet/SSH.NET) | SSH / SFTP client |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM source generators |
-| BouncyCastle | Ed25519 key generation |
-| Microsoft.Extensions.DependencyInjection | DI container |
+| Library | Version | Purpose |
+|---|---|---|
+| [SSH.NET](https://github.com/sshnet/SSH.NET) | 2024.2.0 | SSH shell, SFTP, port forwarding |
+| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | 8.3.2 | MVVM source generators, RelayCommand |
+| [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | 2.4.0 | Ed25519 key pair generation |
+| Microsoft.Extensions.DependencyInjection | 8.0.1 | DI container |
+| Microsoft.Extensions.Http | 8.0.1 | HttpClient factory for Vultr API |
